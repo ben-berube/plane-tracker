@@ -17,11 +17,32 @@ class PlaneTrackerBackend:
         self.flight_service = FlightService()
         self._background_task = None
         
-    async def start_server(self, host: str = "localhost", port: int = 8000):
+    async def start_server(self, host: str = "0.0.0.0", port: int = 8000):
         """Start the backend server"""
         from aiohttp import web
         
         app = web.Application()
+        
+        # Add CORS middleware
+        @web.middleware
+        async def cors_middleware(request, handler):
+            # Handle preflight OPTIONS requests
+            if request.method == 'OPTIONS':
+                response = web.Response()
+            else:
+                response = await handler(request)
+            
+            # Add CORS headers to all responses
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+            response.headers['Access-Control-Max-Age'] = '86400'
+            response.headers['Access-Control-Allow-Credentials'] = 'false'
+            
+            return response
+        
+        app.middlewares.append(cors_middleware)
+        
         app.router.add_get('/api/flights', self.get_flights)
         app.router.add_get('/api/flights/{flight_id}', self.get_flight)
         app.router.add_get('/api/flights/refresh', self.refresh_flights)
@@ -30,7 +51,12 @@ class PlaneTrackerBackend:
         app.router.add_get('/api/status', self.get_status)
         app.router.add_get('/api/rate-limit', self.get_rate_limit_status)
         app.router.add_get('/ws', self.websocket_handler)
-        app.router.add_get('/health', self.health_check)
+        app.router.add_get('/api/health', self.health_check)  # Fixed: moved to /api/health
+        
+        # Add OPTIONS handlers for CORS preflight
+        app.router.add_options('/api/flights', self.handle_options)
+        app.router.add_options('/api/health', self.handle_options)
+        app.router.add_options('/api/flights/{flight_id}', self.handle_options)
         
         # Start background refresh task
         self._background_task = asyncio.create_task(self._background_refresh())
@@ -206,6 +232,16 @@ class PlaneTrackerBackend:
         return web.json_response({
             "status": "healthy",
             "timestamp": datetime.now().isoformat()
+        })
+    
+    async def handle_options(self, request):
+        """Handle CORS preflight OPTIONS requests"""
+        return web.Response(headers={
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Max-Age': '86400',
+            'Access-Control-Allow-Credentials': 'false'
         })
 
 async def main():
