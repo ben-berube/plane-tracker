@@ -7,7 +7,8 @@ class ARView: UIViewController, ARSCNViewDelegate {
     
     @IBOutlet var sceneView: ARSCNView!
     
-    // Trajectory prediction and altitude services
+    // Services
+    private let backendService = BackendService()
     private let trajectoryPredictor = TrajectoryPredictor()
     private let altitudeFallback = AltitudeFallback()
     
@@ -15,6 +16,7 @@ class ARView: UIViewController, ARSCNViewDelegate {
     private var currentFlights: [Flight] = []
     private var flightTrajectories: [String: [TrajectoryPoint]] = [:]
     private var flightAnchors: [String: ARAnchor] = [:]
+    private var cancellables = Set<AnyCancellable>()
     
     // AR visualization
     private var trajectoryNodes: [String: SCNNode] = [:]
@@ -35,8 +37,22 @@ class ARView: UIViewController, ARSCNViewDelegate {
         // Set the scene to the view
         sceneView.scene = scene
         
+        // Subscribe to backend service updates
+        setupBackendSubscriptions()
+        
         // Start flight data updates
         startFlightDataUpdates()
+    }
+    
+    private func setupBackendSubscriptions() {
+        // Subscribe to flight updates from backend
+        backendService.$flights
+            .sink { [weak self] flights in
+                self?.currentFlights = flights
+                self?.updateFlightTrajectories()
+                self?.updateARVisualization()
+            }
+            .store(in: &cancellables)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -73,24 +89,20 @@ class ARView: UIViewController, ARSCNViewDelegate {
     // MARK: - Flight Data Management
     
     private func startFlightDataUpdates() {
-        // Start periodic flight data updates
+        // Fetch initial flight data
+        backendService.fetchFlights()
+        
+        // Start periodic flight data updates (backend handles caching)
         Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.updateFlightData()
+            self?.backendService.fetchFlights()
         }
     }
     
-    private func updateFlightData() {
-        // Fetch flight data from backend
-        // This would typically involve network calls to your backend API
-        // For now, we'll simulate with current flights
-        
-        // Update trajectories for all flights
+    private func updateFlightTrajectories() {
+        // Update trajectories for all flights using backend data
         for flight in currentFlights {
             updateFlightTrajectory(flight)
         }
-        
-        // Update AR visualization
-        updateARVisualization()
     }
     
     private func updateFlightTrajectory(_ flight: Flight) {

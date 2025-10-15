@@ -13,6 +13,41 @@ class TrajectoryPredictor {
                           predictionTime: Double = 60.0, 
                           timeStep: Double = 2.0) -> [TrajectoryPoint] {
         
+        // First priority: Use backend predicted trajectory
+        if let predictedTrajectory = flight.predictedTrajectory, !predictedTrajectory.isEmpty {
+            return convertBackendTrajectory(predictedTrajectory)
+        }
+        
+        // Fallback: Use local prediction when backend unavailable
+        return predictTrajectoryLocally(for: flight, predictionTime: predictionTime, timeStep: timeStep)
+    }
+    
+    private func convertBackendTrajectory(_ backendTrajectory: [[String: Any]]) -> [TrajectoryPoint] {
+        return backendTrajectory.compactMap { pointDict in
+            guard let latitude = pointDict["latitude"] as? Double,
+                  let longitude = pointDict["longitude"] as? Double,
+                  let altitude = pointDict["altitude"] as? Double,
+                  let timeOffset = pointDict["time_offset"] as? Double,
+                  let distanceFromCurrent = pointDict["distance_from_current"] as? Double,
+                  let bearing = pointDict["bearing"] as? Double else {
+                return nil
+            }
+            
+            return TrajectoryPoint(
+                latitude: latitude,
+                longitude: longitude,
+                altitude: altitude,
+                timeOffset: timeOffset,
+                distanceFromCurrent: distanceFromCurrent,
+                bearing: bearing
+            )
+        }
+    }
+    
+    private func predictTrajectoryLocally(for flight: Flight, 
+                                        predictionTime: Double = 60.0, 
+                                        timeStep: Double = 2.0) -> [TrajectoryPoint] {
+        
         guard let lat = flight.latitude,
               let lon = flight.longitude else {
             return []
