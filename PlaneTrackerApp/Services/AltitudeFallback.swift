@@ -14,7 +14,13 @@ class AltitudeFallback {
     private let standardAltitudes: [Int] = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 43000, 44000, 45000, 46000, 47000, 48000, 49000, 50000]
     
     func estimateAltitude(for flight: Flight, with history: [Flight] = []) -> Double {
-        // Method 1: Use available altitude data and update Kalman filter
+        // Method 1: Use backend predicted altitude (highest priority)
+        if let predictedAltitude = flight.predictedAltitude, predictedAltitude > 0 {
+            updateKalmanFilter(altitude: predictedAltitude, verticalRate: flight.verticalRate)
+            return predictedAltitude
+        }
+        
+        // Method 2: Use available altitude data and update Kalman filter
         if let baroAltitude = flight.baroAltitude, baroAltitude > 0 {
             updateKalmanFilter(altitude: baroAltitude, verticalRate: flight.verticalRate)
             return baroAltitude
@@ -30,12 +36,12 @@ class AltitudeFallback {
             return 0.0
         }
         
-        // Method 2: Kalman Filter Prediction
+        // Method 3: Kalman Filter Prediction (fallback when backend unavailable)
         if let predictedAltitude = predictAltitudeWithKalman() {
             return predictedAltitude
         }
         
-        // Method 3: Vertical Rate Integration
+        // Method 4: Vertical Rate Integration
         if let verticalRate = flight.verticalRate {
             let integratedAltitude = integrateVerticalRate(flight: flight, history: history)
             if isReasonableAltitude(integratedAltitude) {
@@ -43,7 +49,7 @@ class AltitudeFallback {
             }
         }
         
-        // Method 4: Velocity-based estimation
+        // Method 5: Velocity-based estimation
         if let velocity = flight.velocity {
             let velocityAltitude = estimateFromVelocity(velocity)
             if isReasonableAltitude(velocityAltitude) {
@@ -51,7 +57,7 @@ class AltitudeFallback {
             }
         }
         
-        // Method 5: Flight phase analysis
+        // Method 6: Flight phase analysis
         return estimateFromFlightPhase(flight: flight, history: history)
     }
     

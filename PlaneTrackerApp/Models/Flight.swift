@@ -19,6 +19,12 @@ struct Flight: Codable, Identifiable {
     let spi: Bool
     let positionSource: Int
     
+    // Backend enhanced fields
+    let predictedAltitude: Double?
+    let altitudeConfidence: Double?
+    let hasPredictedAltitude: Bool
+    let predictedTrajectory: [[String: Double]]?
+    
     enum CodingKeys: String, CodingKey {
         case id = "icao24"
         case callsign
@@ -37,6 +43,35 @@ struct Flight: Codable, Identifiable {
         case squawk
         case spi
         case positionSource
+        case predictedAltitude
+        case altitudeConfidence
+        case hasPredictedAltitude
+        case predictedTrajectory
+    }
+    
+    // Custom initializer for backward compatibility
+    init(id: String, callsign: String, originCountry: String, timePosition: Int?, lastContact: Int, longitude: Double?, latitude: Double?, baroAltitude: Double?, onGround: Bool, velocity: Double?, trueTrack: Double?, verticalRate: Double?, sensors: [Int]?, geoAltitude: Double?, squawk: String?, spi: Bool, positionSource: Int) {
+        self.id = id
+        self.callsign = callsign
+        self.originCountry = originCountry
+        self.timePosition = timePosition
+        self.lastContact = lastContact
+        self.longitude = longitude
+        self.latitude = latitude
+        self.baroAltitude = baroAltitude
+        self.onGround = onGround
+        self.velocity = velocity
+        self.trueTrack = trueTrack
+        self.verticalRate = verticalRate
+        self.sensors = sensors
+        self.geoAltitude = geoAltitude
+        self.squawk = squawk
+        self.spi = spi
+        self.positionSource = positionSource
+        self.predictedAltitude = nil
+        self.altitudeConfidence = nil
+        self.hasPredictedAltitude = false
+        self.predictedTrajectory = nil
     }
 }
 

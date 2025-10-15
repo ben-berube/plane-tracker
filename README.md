@@ -1,116 +1,178 @@
 # PlaneTracker
 
-An AR-powered iOS application for tracking and visualizing aircraft in the San Francisco Bay Area using real-time flight data from the OpenSky Network.
+A real-time aircraft tracking system with augmented reality visualization, built with Python backend and iOS frontend.
+
+## Overview
+
+PlaneTracker combines real-time flight data with augmented reality to provide an immersive aircraft tracking experience. The system features advanced trajectory prediction, intelligent altitude estimation, and optimized caching for reliable performance.
+
+## Quick Start
+
+### For iOS Development
+
+1. **Clone the repository**
+2. **Open `PlaneTracker.xcodeproj` in Xcode**
+3. **Follow the [XCODE_SETUP_GUIDE.md](XCODE_SETUP_GUIDE.md) for detailed setup instructions**
+
+### For Backend Development
+
+1. **Navigate to `Backend/` directory**
+2. **Follow the [Backend/README.md](Backend/README.md) for Python server setup**
+
+## Architecture
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   iOS App       │    │   Python Backend │    │   OpenSky API   │
+│   (ARKit)       │◄───┤   (Data Processing)│◄───┤   (Flight Data) │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+### Key Components
+
+- **iOS App**: ARKit-based augmented reality visualization
+- **Python Backend**: Flight data processing and API serving
+- **OpenSky API**: Real-time aircraft data source
+- **Kalman Filtering**: Advanced trajectory prediction
+- **Intelligent Caching**: Optimized data retrieval
 
 ## Features
 
-- **Real-time Flight Tracking**: Fetches live flight data from OpenSky Network API
-- **AR Visualization**: Displays aircraft as 3D annotations in augmented reality
-- **SF Bay Area Focus**: Filters flights specifically for the San Francisco Bay Area
-- **Altitude Fallback**: Intelligent estimation of missing altitude data
-- **3D Positioning**: Converts geographic coordinates to ARKit world coordinates
+- **Real-time Flight Tracking**: Live aircraft data with 8-second refresh
+- **Augmented Reality**: ARKit-based 3D aircraft visualization
+- **Trajectory Prediction**: Kalman filtering for flight path forecasting
+- **Altitude Estimation**: Multi-source altitude data with confidence scoring
+- **Performance Optimization**: Intelligent caching and rate limit handling
+- **Cross-platform**: iOS app with Python backend
 
 ## Project Structure
 
 ```
 PlaneTracker/
-│
-├─ PlaneTrackerApp/        # iOS Swift app
-│   ├─ AppDelegate.swift
-│   ├─ SceneDelegate.swift
-│   ├─ Views/
-│   │   ├─ ARView.swift           # Main AR view
-│   │   └─ PlaneAnnotations.swift # 3D plane markers
-│   ├─ Models/
-│   │   ├─ Flight.swift           # Flight data model
-│   │   └─ Coordinates.swift     # Lat/Lon/Alt helper
-│   ├─ Services/
-│   │   ├─ OpenSkyService.swift   # Fetch + filter SF Bay flights
-│   │   └─ AltitudeFallback.swift # Logic for estimating missing altitudes
-│   └─ Utils/
-│       └─ MathHelpers.swift      # Helper functions for AR positioning
-│
-├─ Backend/                 # Optional (Python/Node)
-│   ├─ main.py
-│   ├─ flights.py            # Fetch/filter flights
-│   └─ requirements.txt
-│
-└─ README.md
+├── PlaneTracker.xcodeproj/     # Xcode project file
+├── PlaneTrackerApp/            # iOS application source
+│   ├── Models/                # Data models (Flight, Coordinates)
+│   ├── Services/              # Business logic (Backend, OpenSky)
+│   ├── Views/                 # UI controllers (ARView, Annotations)
+│   ├── Utils/                 # Utility functions (MathHelpers)
+│   └── Assets.xcassets/       # App icons and assets
+├── PlaneTrackerTests/          # iOS unit tests
+├── Backend/                   # Python backend server
+│   ├── main.py               # Main server application
+│   ├── flights.py            # Flight data processing
+│   ├── kalman_filter.py      # Kalman filtering algorithms
+│   └── requirements.txt      # Python dependencies
+├── XCODE_SETUP_GUIDE.md       # Comprehensive iOS setup guide
+└── README.md                  # This file
 ```
 
-## iOS App Components
+## Getting Started
 
-### Views
-- **ARView.swift**: Main ARKit view controller for displaying aircraft in AR
-- **PlaneAnnotations.swift**: 3D scene nodes representing aircraft with labels
+### Prerequisites
 
-### Models
-- **Flight.swift**: Data model for flight information from OpenSky API
-- **Coordinates.swift**: Helper for coordinate conversion and calculations
+- **Xcode 14.0+** (for iOS development)
+- **Python 3.8+** (for backend server)
+- **iPhone with iOS 15.0+** (for ARKit support)
+- **Apple Developer Account** (for device testing)
 
-### Services
-- **OpenSkyService.swift**: Handles API communication and data fetching
-- **AltitudeFallback.swift**: Estimates missing altitude data using velocity and flight phase
+### Setup Instructions
 
-### Utils
-- **MathHelpers.swift**: Mathematical utilities for coordinate conversion and AR positioning
-
-## Backend (Optional)
-
-The Python backend provides additional flight data processing and filtering capabilities:
-
-- **main.py**: FastAPI server with endpoints for flight data
-- **flights.py**: Flight data service with filtering and statistics
-- **requirements.txt**: Python dependencies
-
-### Backend Setup
-
-```bash
-cd Backend
-pip install -r requirements.txt
-python main.py
-```
+1. **iOS Development**: See [XCODE_SETUP_GUIDE.md](XCODE_SETUP_GUIDE.md) for complete setup
+2. **Backend Development**: See [Backend/README.md](Backend/README.md) for Python server setup
 
 ## API Endpoints
 
-- `GET /api/flights` - Get all flights in SF Bay area
-- `GET /api/flights/{flight_id}` - Get specific flight by ICAO24 ID
-- `GET /health` - Health check endpoint
+The backend provides these REST endpoints:
+
+- `GET /api/health` - Health check
+- `GET /api/flights` - Get all flights
+- `GET /api/flights/{id}` - Get specific flight
+- `GET /api/flights/{id}/trajectory` - Get flight trajectory
+- `GET /api/flights/{id}/altitude` - Get altitude prediction
+
+## Testing
+
+### iOS Tests
+- **Unit Tests**: Press Cmd+U in Xcode
+- **Test Coverage**: Backend service, models, coordinates, trajectory, altitude
+- **Integration Tests**: End-to-end data flow validation
+
+### Backend Tests
+```bash
+cd Backend
+python test_enhanced_api.py
+python test_optimized_api.py
+```
+
+## Performance
+
+- **8-second cache duration** for optimal API usage
+- **Rate limit handling** for OpenSky API (10 requests/minute)
+- **Background processing** for continuous data updates
+- **Memory optimization** for ARKit rendering
+- **CORS support** for iOS app connectivity
 
 ## Requirements
 
 ### iOS App
-- iOS 13.0+
-- Xcode 12.0+
-- ARKit framework
-- CoreLocation framework
+- **Xcode 14.0+**
+- **iOS 15.0+**
+- **iPhone 6s or later** (for ARKit)
+- **Active Apple Developer Account**
 
 ### Backend
-- Python 3.8+
-- aiohttp
-- asyncio
+- **Python 3.8+**
+- **aiohttp** (async HTTP server)
+- **numpy** (numerical computing)
+- **python-dateutil** (date utilities)
 
-## Data Sources
+## Development
 
-- **OpenSky Network**: Real-time flight data API
-- **Geographic Bounds**: San Francisco Bay Area (37.4°N to 38.0°N, -122.6°W to -121.8°W)
+### iOS Development
+1. **Open `PlaneTracker.xcodeproj` in Xcode**
+2. **Select your development team** in project settings
+3. **Connect iPhone** and select as deployment target
+4. **Build and run** (Cmd+R)
 
-## Key Features
+### Backend Development
+1. **Navigate to `Backend/` directory**
+2. **Create virtual environment**: `python3 -m venv venv`
+3. **Activate environment**: `source venv/bin/activate`
+4. **Install dependencies**: `pip install -r requirements.txt`
+5. **Start server**: `python main.py`
 
-1. **Real-time Data**: Fetches live flight data every few seconds
-2. **AR Visualization**: Places 3D aircraft markers in AR space
-3. **Intelligent Filtering**: Focuses on relevant flights in the SF Bay area
-4. **Altitude Estimation**: Handles missing altitude data intelligently
-5. **Coordinate Conversion**: Converts GPS coordinates to ARKit world coordinates
+## Troubleshooting
 
-## Development Notes
+### Common Issues
+- **Backend connection**: Ensure iPhone and Mac on same WiFi network
+- **ARKit not working**: Verify device compatibility and permissions
+- **Code signing errors**: Update bundle identifier and select correct team
+- **Rate limit warnings**: Expected behavior from OpenSky API
 
-- The app uses ARKit for AR visualization
-- OpenSky Network API provides free real-time flight data
-- Coordinate conversion handles the transformation from GPS to ARKit coordinates
-- Altitude fallback uses velocity and flight phase to estimate missing data
-- The backend is optional but provides additional data processing capabilities
+### Getting Help
+1. **Check setup guides** for detailed troubleshooting
+2. **Review Xcode console** for error messages
+3. **Test backend independently** with curl commands
+4. **Verify device compatibility** for ARKit support
+
+## Contributing
+
+1. **Fork the repository**
+2. **Create feature branch**: `git checkout -b feature/new-feature`
+3. **Make changes and test thoroughly**
+4. **Run tests**: iOS (Cmd+U) and Backend (`python -m pytest`)
+5. **Submit pull request** with description
 
 ## License
 
-This project is for educational and personal use. Please respect the OpenSky Network API terms of service.
+MIT License - see LICENSE file for details
+
+## Support
+
+For issues and questions:
+1. **Check the setup guides** first
+2. **Review error logs** for specific issues
+3. **Test components independently** to isolate problems
+4. **Verify network connectivity** between devices
+
+The project is designed to be robust and self-healing, with comprehensive error handling and graceful degradation when external services are unavailable.
