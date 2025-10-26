@@ -4,7 +4,7 @@ import Combine
 class BackendService: ObservableObject {
     private var baseURL: String {
         #if DEBUG
-        return "http://10.103.2.166:8000"
+        return "http://10.103.2.222:8000"
         #else
         return "https://your-production-backend.com"
         #endif
@@ -23,10 +23,12 @@ class BackendService: ObservableObject {
     // MARK: - Public Methods
     
     func fetchFlights() {
+        NSLog("🔵 BackendService.fetchFlights() called")
         // Check cache first
         if let cacheTime = cacheTimestamp,
            Date().timeIntervalSince(cacheTime) < cacheDuration,
            !flightsCache.isEmpty {
+            NSLog("💾 BackendService: Using cached data (%d flights)", flightsCache.count)
             DispatchQueue.main.async {
                 self.flights = self.flightsCache
                 self.isLoading = false
@@ -39,20 +41,25 @@ class BackendService: ObservableObject {
         errorMessage = nil
         
         guard let url = URL(string: "\(baseURL)/api/flights") else {
+            NSLog("❌ BackendService: Invalid URL")
             errorMessage = "Invalid URL"
             isLoading = false
             return
         }
+        
+        NSLog("🌐 BackendService: Fetching from %@", url.absoluteString)
         
         session.dataTask(with: url) { [weak self] data, response, error in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 
                 if let error = error {
+                    NSLog("❌ BackendService: Network error - %@", error.localizedDescription)
                     self?.errorMessage = error.localizedDescription
                     // Return cached data if available
-                    if !self?.flightsCache.isEmpty ?? false {
-                        self?.flights = self?.flightsCache ?? []
+                    if let cache = self?.flightsCache, !cache.isEmpty {
+                        NSLog("💾 BackendService: Using cached data due to error")
+                        self?.flights = cache
                     }
                     return
                 }
@@ -66,14 +73,17 @@ class BackendService: ObservableObject {
                     let response = try JSONDecoder().decode(BackendFlightsResponse.self, from: data)
                     if response.success {
                         let flights = response.flights.map { Flight(from: $0) }
+                        NSLog("✅✅✅ BackendService: Successfully fetched %d flights", flights.count)
                         self?.flights = flights
                         self?.flightsCache = flights
                         self?.cacheTimestamp = Date()
                         self?.errorMessage = nil
                     } else {
+                        NSLog("❌ BackendService: Backend returned success=false")
                         self?.errorMessage = "Backend error"
                     }
                 } catch {
+                    NSLog("❌ BackendService: Failed to decode - %@", error.localizedDescription)
                     self?.errorMessage = "Failed to decode response: \(error.localizedDescription)"
                 }
             }
@@ -129,7 +139,7 @@ class BackendService: ObservableObject {
     // MARK: - Health Check
     
     func checkBackendHealth() async -> Bool {
-        guard let url = URL(string: "\(baseURL)/health") else {
+        guard let url = URL(string: "\(baseURL)/api/health") else {
             return false
         }
         

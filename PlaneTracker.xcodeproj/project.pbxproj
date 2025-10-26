@@ -10,6 +10,7 @@
 		A1234567890123456789012A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789012B /* AppDelegate.swift */; };
 		A1234567890123456789012C /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789012D /* SceneDelegate.swift */; };
 		A1234567890123456789012E /* ARView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789012F /* ARView.swift */; };
+		A12345678901234567890131 /* LoadingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12345678901234567890130 /* LoadingViewController.swift */; };
 		A1234567890123456789013A /* PlaneAnnotations.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789013B /* PlaneAnnotations.swift */; };
 		A1234567890123456789013C /* Flight.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789013D /* Flight.swift */; };
 		A1234567890123456789013E /* Coordinates.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1234567890123456789013F /* Coordinates.swift */; };
@@ -38,11 +39,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A1234567890123456789018D /* PlaneTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PlaneTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A1234567890123456789018E /* PlaneTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PlaneTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1234567890123456789012B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A1234567890123456789012D /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		A1234567890123456789012F /* ARView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARView.swift; sourceTree = "<group>"; };
+		A12345678901234567890130 /* LoadingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingViewController.swift; sourceTree = "<group>"; };
 		A1234567890123456789013B /* PlaneAnnotations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneAnnotations.swift; sourceTree = "<group>"; };
 		A1234567890123456789013D /* Flight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Flight.swift; sourceTree = "<group>"; };
 		A1234567890123456789013F /* Coordinates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinates.swift; sourceTree = "<group>"; };
@@ -52,14 +52,14 @@
 		A1234567890123456789015B /* AltitudeFallback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AltitudeFallback.swift; sourceTree = "<group>"; };
 		A1234567890123456789015D /* MathHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathHelpers.swift; sourceTree = "<group>"; };
 		A1234567890123456789015F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A1234567890123456789019A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1234567890123456789016B /* BackendServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendServiceTests.swift; sourceTree = "<group>"; };
 		A1234567890123456789016D /* FlightModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightModelTests.swift; sourceTree = "<group>"; };
 		A1234567890123456789016F /* CoordinatesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoordinatesTests.swift; sourceTree = "<group>"; };
 		A1234567890123456789017B /* TrajectoryPredictorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryPredictorTests.swift; sourceTree = "<group>"; };
 		A1234567890123456789017D /* AltitudeFallbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AltitudeFallbackTests.swift; sourceTree = "<group>"; };
 		A1234567890123456789017F /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
-		A1234567890123456789019B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FB8FE4C42EA9E15800697587 /* PlaneTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PlaneTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB8FE4C52EA9E15800697587 /* PlaneTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PlaneTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,14 +92,13 @@
 		A1234567890123456789019F /* PlaneTrackerApp */ = {
 			isa = PBXGroup;
 			children = (
-				A123456789012345678901A2 /* AppDelegate.swift */,
-				A123456789012345678901A3 /* SceneDelegate.swift */,
+				A1234567890123456789012B /* AppDelegate.swift */,
+				A1234567890123456789012D /* SceneDelegate.swift */,
 				A123456789012345678901A4 /* Views */,
 				A123456789012345678901A5 /* Models */,
 				A123456789012345678901A6 /* Services */,
 				A123456789012345678901A7 /* Utils */,
-				A123456789012345678901A8 /* Assets.xcassets */,
-				A123456789012345678901A9 /* Info.plist */,
+				A1234567890123456789015F /* Assets.xcassets */,
 			);
 			path = PlaneTrackerApp;
 			sourceTree = "<group>";
@@ -107,13 +106,12 @@
 		A123456789012345678901A0 /* PlaneTrackerTests */ = {
 			isa = PBXGroup;
 			children = (
-				A123456789012345678901AA /* BackendServiceTests.swift */,
-				A123456789012345678901AB /* FlightModelTests.swift */,
-				A123456789012345678901AC /* CoordinatesTests.swift */,
-				A123456789012345678901AD /* TrajectoryPredictorTests.swift */,
-				A123456789012345678901AE /* AltitudeFallbackTests.swift */,
-				A123456789012345678901AF /* IntegrationTests.swift */,
-				A123456789012345678901B0 /* Info.plist */,
+				A1234567890123456789016B /* BackendServiceTests.swift */,
+				A1234567890123456789016D /* FlightModelTests.swift */,
+				A1234567890123456789016F /* CoordinatesTests.swift */,
+				A1234567890123456789017B /* TrajectoryPredictorTests.swift */,
+				A1234567890123456789017D /* AltitudeFallbackTests.swift */,
+				A1234567890123456789017F /* IntegrationTests.swift */,
 			);
 			path = PlaneTrackerTests;
 			sourceTree = "<group>";
@@ -121,8 +119,8 @@
 		A123456789012345678901A1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A123456789012345678901B1 /* PlaneTracker.app */,
-				A123456789012345678901B2 /* PlaneTrackerTests.xctest */,
+				FB8FE4C42EA9E15800697587 /* PlaneTracker.app */,
+				FB8FE4C52EA9E15800697587 /* PlaneTrackerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -130,8 +128,9 @@
 		A123456789012345678901A4 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				A123456789012345678901B3 /* ARView.swift */,
-				A123456789012345678901B4 /* PlaneAnnotations.swift */,
+				A1234567890123456789012F /* ARView.swift */,
+				A12345678901234567890130 /* LoadingViewController.swift */,
+				A1234567890123456789013B /* PlaneAnnotations.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -139,8 +138,8 @@
 		A123456789012345678901A5 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				A123456789012345678901B5 /* Flight.swift */,
-				A123456789012345678901B6 /* Coordinates.swift */,
+				A1234567890123456789013D /* Flight.swift */,
+				A1234567890123456789013F /* Coordinates.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -148,10 +147,10 @@
 		A123456789012345678901A6 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				A123456789012345678901B7 /* BackendService.swift */,
-				A123456789012345678901B8 /* OpenSkyService.swift */,
-				A123456789012345678901B9 /* TrajectoryPredictor.swift */,
-				A123456789012345678901BA /* AltitudeFallback.swift */,
+				A1234567890123456789014B /* BackendService.swift */,
+				A1234567890123456789014D /* OpenSkyService.swift */,
+				A1234567890123456789014F /* TrajectoryPredictor.swift */,
+				A1234567890123456789015B /* AltitudeFallback.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -159,7 +158,7 @@
 		A123456789012345678901A7 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
-				A123456789012345678901BB /* MathHelpers.swift */,
+				A1234567890123456789015D /* MathHelpers.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -181,7 +180,7 @@
 			);
 			name = PlaneTracker;
 			productName = PlaneTracker;
-			productReference = A1234567890123456789018D /* PlaneTracker.app */;
+			productReference = FB8FE4C42EA9E15800697587 /* PlaneTracker.app */;
 			productType = "com.apple.product-type.application";
 		};
 		A123456789012345678901BF /* PlaneTrackerTests */ = {
@@ -199,7 +198,7 @@
 			);
 			name = PlaneTrackerTests;
 			productName = PlaneTrackerTests;
-			productReference = A1234567890123456789018E /* PlaneTrackerTests.xctest */;
+			productReference = FB8FE4C52EA9E15800697587 /* PlaneTrackerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -210,7 +209,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					A1234567890123456789018C = {
 						CreatedOnToolsVersion = 15.0;
@@ -266,6 +265,7 @@
 				A1234567890123456789012A /* AppDelegate.swift in Sources */,
 				A1234567890123456789012C /* SceneDelegate.swift in Sources */,
 				A1234567890123456789012E /* ARView.swift in Sources */,
+				A12345678901234567890131 /* LoadingViewController.swift in Sources */,
 				A1234567890123456789013A /* PlaneAnnotations.swift in Sources */,
 				A1234567890123456789013C /* Flight.swift in Sources */,
 				A1234567890123456789013E /* Coordinates.swift in Sources */,
@@ -359,6 +359,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -415,6 +416,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -427,7 +429,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 8PVSKMJ2AP;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PlaneTrackerApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -455,7 +457,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 8PVSKMJ2AP;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PlaneTrackerApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -479,7 +481,6 @@
 		A123456789012345678901C9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -500,7 +501,6 @@
 		A123456789012345678901CA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -521,15 +521,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A123456789012345678901C4 /* Build configuration list for PBXProject "PlaneTracker" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A123456789012345678901C5 /* Debug */,
-				A123456789012345678901C6 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		A123456789012345678901BC /* Build configuration list for PBXNativeTarget "PlaneTracker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -544,6 +535,15 @@
 			buildConfigurations = (
 				A123456789012345678901C9 /* Debug */,
 				A123456789012345678901CA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A123456789012345678901C4 /* Build configuration list for PBXProject "PlaneTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A123456789012345678901C5 /* Debug */,
+				A123456789012345678901C6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

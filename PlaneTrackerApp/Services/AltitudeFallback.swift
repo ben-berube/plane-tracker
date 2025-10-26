@@ -42,7 +42,7 @@ class AltitudeFallback {
         }
         
         // Method 4: Vertical Rate Integration
-        if let verticalRate = flight.verticalRate {
+        if flight.verticalRate != nil {
             let integratedAltitude = integrateVerticalRate(flight: flight, history: history)
             if isReasonableAltitude(integratedAltitude) {
                 return integratedAltitude
@@ -68,8 +68,8 @@ class AltitudeFallback {
         let dt = lastUpdateTime?.timeIntervalSince(now) ?? 1.0
         
         // Predict step
-        let F = [[1.0, dt], [0.0, 1.0]]  // State transition matrix
-        let Q = [[1.0, 0.0], [0.0, 0.1]] // Process noise
+        let _ = [[1.0, dt], [0.0, 1.0]]  // State transition matrix (unused for now)
+        let _ = [[1.0, 0.0], [0.0, 0.1]] // Process noise (unused for now)
         
         // Update state
         altitudeState[0] = altitudeState[0] + altitudeState[1] * dt
@@ -217,7 +217,7 @@ class AltitudeFallback {
     
     func getStandardAltitude(above seaLevel: Bool = true) -> Double {
         // Return a standard cruising altitude
-        return above seaLevel ? 35000.0 : 0.0
+        return seaLevel ? 35000.0 : 0.0
     }
     
     func isAltitudeReasonable(_ altitude: Double) -> Bool {

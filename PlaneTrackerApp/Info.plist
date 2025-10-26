@@ -28,6 +28,11 @@
 	<string>PlaneTracker needs your location to show nearby aircraft accurately.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>PlaneTracker needs your location to show nearby aircraft accurately.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

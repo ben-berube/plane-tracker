@@ -70,7 +70,7 @@ class MathHelpers {
         let maxScale: Float = 2.0
         
         let normalizedDistance = min(distance / maxDistance, 1.0)
-        let scale = baseScale * (maxScale - (maxScale - minScale) * (1.0 - normalizedDistance)
+        let scale = baseScale * (maxScale - (maxScale - minScale) * (1.0 - normalizedDistance))
         
         return max(scale, minScale)
     }

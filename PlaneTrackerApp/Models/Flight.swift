@@ -1,6 +1,6 @@
 import Foundation
 
-struct Flight: Codable, Identifiable {
+struct Flight: Identifiable {
     let id: String
     let callsign: String
     let originCountry: String
@@ -23,31 +23,7 @@ struct Flight: Codable, Identifiable {
     let predictedAltitude: Double?
     let altitudeConfidence: Double?
     let hasPredictedAltitude: Bool
-    let predictedTrajectory: [[String: Double]]?
-    
-    enum CodingKeys: String, CodingKey {
-        case id = "icao24"
-        case callsign
-        case originCountry
-        case timePosition
-        case lastContact
-        case longitude
-        case latitude
-        case baroAltitude
-        case onGround
-        case velocity
-        case trueTrack
-        case verticalRate
-        case sensors
-        case geoAltitude
-        case squawk
-        case spi
-        case positionSource
-        case predictedAltitude
-        case altitudeConfidence
-        case hasPredictedAltitude
-        case predictedTrajectory
-    }
+    let predictedTrajectory: [[String: Any]]?
     
     // Custom initializer for backward compatibility
     init(id: String, callsign: String, originCountry: String, timePosition: Int?, lastContact: Int, longitude: Double?, latitude: Double?, baroAltitude: Double?, onGround: Bool, velocity: Double?, trueTrack: Double?, verticalRate: Double?, sensors: [Int]?, geoAltitude: Double?, squawk: String?, spi: Bool, positionSource: Int) {
@@ -90,6 +66,12 @@ struct AnyCodable: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         
+        // Check for null values first
+        if container.decodeNil() {
+            value = NSNull()
+            return
+        }
+        
         if let intValue = try? container.decode(Int.self) {
             value = intValue
         } else if let doubleValue = try? container.decode(Double.self) {
@@ -101,7 +83,8 @@ struct AnyCodable: Codable {
         } else if let arrayValue = try? container.decode([AnyCodable].self) {
             value = arrayValue.map { $0.value }
         } else {
-            throw DecodingError.typeMismatch(Any.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Unsupported type"))
+            // If all else fails, store as null instead of throwing
+            value = NSNull()
         }
     }
     
