@@ -38,6 +38,11 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
     private var shuffledFlights: [Flight] = []
     private var currentShuffleIndex = 0
     private var popupCompass: UIView?
+    private var selectedFlightId: String? // Track currently selected flight
+    
+    // Zoom tracking
+    private var currentZoom: Float = 1.0
+    private var zoomSlider: UISlider?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -73,6 +78,9 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         
         // Setup location services
         setupLocationServices()
+        
+        // Setup zoom gestures and slider
+        setupZoomControls()
     }
     
     private func setupLocationServices() {
@@ -91,6 +99,60 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         NSLog("⚠️ Location error: \(error.localizedDescription)")
+    }
+    
+    private func setupZoomControls() {
+        // Add pinch gesture for zoom
+        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+        sceneView.addGestureRecognizer(pinchGesture)
+        
+        // Create zoom slider
+        let slider = UISlider(frame: CGRect(x: 20, y: view.bounds.height - 100, width: view.bounds.width - 40, height: 40))
+        slider.minimumValue = 1.0
+        slider.maximumValue = 5.0
+        slider.value = 1.0
+        slider.isContinuous = true
+        slider.addTarget(self, action: #selector(zoomSliderChanged(_:)), for: .valueChanged)
+        slider.tintColor = .systemBlue
+        slider.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        slider.layer.cornerRadius = 8
+        view.addSubview(slider)
+        zoomSlider = slider
+    }
+    
+    @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+        let newZoom = currentZoom * Float(gesture.scale)
+        currentZoom = max(1.0, min(5.0, newZoom))
+        zoomSlider?.value = currentZoom
+        applyZoom()
+        gesture.scale = 1.0
+    }
+    
+    @objc private func zoomSliderChanged(_ slider: UISlider) {
+        currentZoom = slider.value
+        applyZoom()
+    }
+    
+    private func applyZoom() {
+        // Apply zoom to all flight nodes
+        for (_, node) in flightNodes {
+            let baseScale: Float = 1.0
+            
+            // Get distance from camera
+            let cameraPos = getCameraPosition()
+            let nodePos = SIMD3<Float>(node.position.x, node.position.y, node.position.z)
+            let distance = simd_length(nodePos - cameraPos)
+            
+            // Scale based on distance and zoom
+            var scale = baseScale * currentZoom
+            
+            // If flight is too far, maintain minimum size (2x base size)
+            if distance > 50.0 {
+                scale = baseScale * 2.0
+            }
+            
+            node.scale = SCNVector3(scale, scale, scale)
+        }
     }
     
     private func setupCompassOverlay() {
@@ -221,23 +283,67 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         // No rotation needed - dots are already in correct absolute position
     }
     
+    private func calculateDistance(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) -> Double {
+        let fromLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
+        let toLocation = CLLocation(latitude: to.latitude, longitude: to.longitude)
+        return fromLocation.distance(from: toLocation)
+    }
+    
     private func inferAirline(from callsign: String) -> String {
         let trimmed = callsign.trimmingCharacters(in: .whitespaces).uppercased()
         
-        // Map common airline codes to names
+        // Map common airline codes to names (ICAO and IATA formats)
         let airlinePrefixes: [String: String] = [
+            // ICAO codes (3-letter)
             "UAL": "United Airlines",
+            "UA": "United Airlines",
             "SWA": "Southwest Airlines",
+            "WN": "Southwest Airlines",
             "AAL": "American Airlines",
+            "AA": "American Airlines",
             "DAL": "Delta Air Lines",
+            "DL": "Delta Air Lines",
             "ASA": "Alaska Airlines",
+            "AS": "Alaska Airlines",
             "JBU": "JetBlue Airways",
+            "B6": "JetBlue Airways",
             "NKS": "Spirit Airlines",
+            "NK": "Spirit Airlines",
             "FFT": "Frontier Airlines",
+            "F9": "Frontier Airlines",
             "FDX": "FedEx",
+            "FX": "FedEx",
             "UPS": "UPS Airlines",
+            "5X": "UPS Airlines",
             "EJA": "Executive Jet Aviation",
-            "N": "Private/Civil Aviation" // N-prefix for US registered aircraft
+            "SKW": "SkyWest Airlines",
+            "OO": "SkyWest Airlines",
+            "ENY": "Envoy Air",
+            "MQ": "Envoy Air",
+            "QXE": "Horizon Air",
+            "QX": "Horizon Air",
+            "CFE": "Comair",
+            "OH": "Comair",
+            "CAO": "Cargo One",
+            "VIR": "Virgin America",
+            "VX": "Virgin America",
+            "BAW": "British Airways",
+            "BA": "British Airways",
+            "UAE": "Emirates",
+            "EK": "Emirates",
+            "THY": "Turkish Airlines",
+            "TK": "Turkish Airlines",
+            "SCX": "Sun Country Airlines",
+            "SY": "Sun Country Airlines",
+            "VJT": "VistaJet",
+            "LXJ": "Flexjet",
+            "CSG": "Carson Air",
+            "CMD": "Commander Air",
+            "VOI": "Volato",
+            "BYF": "Bell Airframe",
+            "CAFE": "Cafe Aero",
+            // N-prefix for US registered aircraft
+            "N": "US Registered Aircraft"
         ]
         
         // Check if callsign starts with known prefix
@@ -252,7 +358,7 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
             return "US Registered Aircraft"
         }
         
-        return "Unknown Airline"
+        return "Commercial Flight"
     }
     
     private func updateCompassHeading() {
@@ -290,6 +396,8 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
                 if let flightId = getFlightId(for: node) {
                     // Found the flight node - show details
                     if let flight = currentFlights.first(where: { $0.id == flightId }) {
+                        selectedFlightId = flightId
+                        updateARVisualization() // Update colors
                         showFlightDetail(for: flight)
                         return
                     }
@@ -346,15 +454,17 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
     private func showFlightDetailWithAnimation(for flight: Flight, direction: UISwipeGestureRecognizer.Direction) {
         guard let oldPopup = flightDetailView else {
             showFlightDetail(for: flight)
+            addSwipeGestures()
             return
         }
         
-        // Animate old popup out
+        // Animate old popup out WITHOUT removing it (to keep gestures)
         let slideOutX: CGFloat = direction == .left ? -view.bounds.width : view.bounds.width
         UIView.animate(withDuration: 0.2, animations: {
             oldPopup.transform = CGAffineTransform(translationX: slideOutX, y: 0)
             oldPopup.alpha = 0
         }) { _ in
+            // Now remove and create new popup
             oldPopup.removeFromSuperview()
             
             // Show new popup sliding in from opposite direction
@@ -367,6 +477,11 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
                 UIView.animate(withDuration: 0.2) {
                     newPopup.transform = .identity
                     newPopup.alpha = 1
+                }
+                
+                // CRITICAL: Re-add swipe gestures after animation completes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    self.addSwipeGestures()
                 }
             }
         }
@@ -394,56 +509,103 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
     }
     
     private func showFlightDetail(for flight: Flight) {
+        // Update selected flight
+        selectedFlightId = flight.id
+        updateARVisualization() // Update AR target colors
+        
+        // If not already in shuffle mode, populate shuffled flights with all current flights
+        if shuffledFlights.isEmpty {
+            shuffledFlights = currentFlights
+            currentShuffleIndex = currentFlights.firstIndex(where: { $0.id == flight.id }) ?? 0
+        }
+        
         // Only dismiss if not in animation
         if let existing = flightDetailView, existing.layer.animationKeys() == nil {
             existing.removeFromSuperview()
         }
         
-        // Create popup view
-        let popup = UIView(frame: CGRect(x: 20, y: view.bounds.height - 200, width: view.bounds.width - 40, height: 160))
+        // Create popup view - prettier, more spacious
+        let popup = UIView(frame: CGRect(x: 20, y: view.bounds.height - 240, width: view.bounds.width - 40, height: 200))
         popup.isUserInteractionEnabled = true
-        popup.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.95)
-        popup.layer.cornerRadius = 16
+        popup.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.98)
+        popup.layer.cornerRadius = 20
         popup.layer.shadowColor = UIColor.black.cgColor
-        popup.layer.shadowOpacity = 0.3
-        popup.layer.shadowOffset = CGSize(width: 0, height: -2)
-        popup.layer.shadowRadius = 8
+        popup.layer.shadowOpacity = 0.4
+        popup.layer.shadowOffset = CGSize(width: 0, height: -4)
+        popup.layer.shadowRadius = 12
         
-        // Add title (Callsign)
-        let titleLabel = UILabel(frame: CGRect(x: 20, y: 16, width: popup.bounds.width - 80, height: 24))
-        titleLabel.text = flight.callsign
-        titleLabel.font = UIFont.boldSystemFont(ofSize: 20)
-        titleLabel.textColor = .label
-        popup.addSubview(titleLabel)
+        // Add subtle border
+        popup.layer.borderWidth = 1
+        popup.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.2).cgColor
         
-        // Add airline (infer from callsign)
-        let airlineLabel = UILabel(frame: CGRect(x: 20, y: 44, width: popup.bounds.width - 40, height: 20))
+        // Add title (Callsign) - make it selectable
+        let titleTextView = UITextView(frame: CGRect(x: 15, y: 12, width: popup.bounds.width - 80, height: 28))
+        titleTextView.text = flight.callsign.trimmingCharacters(in: .whitespaces)
+        titleTextView.font = UIFont.boldSystemFont(ofSize: 20)
+        titleTextView.textColor = .label
+        titleTextView.backgroundColor = .clear
+        titleTextView.isEditable = false
+        titleTextView.isSelectable = true
+        titleTextView.isScrollEnabled = false
+        titleTextView.dataDetectorTypes = .flightNumber
+        popup.addSubview(titleTextView)
+        
+        // Add airline (infer from callsign) - prettier styling
+        let airlineLabel = UILabel(frame: CGRect(x: 20, y: 40, width: popup.bounds.width - 40, height: 22))
         airlineLabel.text = inferAirline(from: flight.callsign)
-        airlineLabel.font = UIFont.systemFont(ofSize: 14)
-        airlineLabel.textColor = .secondaryLabel
+        airlineLabel.font = UIFont.systemFont(ofSize: 15, weight: .medium)
+        airlineLabel.textColor = .systemBlue
         popup.addSubview(airlineLabel)
         
-        // Add origin country (only field available from OpenSky)
-        let routeLabel = UILabel(frame: CGRect(x: 20, y: 68, width: popup.bounds.width - 40, height: 20))
-        routeLabel.text = "Origin: \(flight.originCountry)"
+        // Add origin country (only field available from OpenSky) - better spacing
+        let routeLabel = UILabel(frame: CGRect(x: 20, y: 64, width: popup.bounds.width - 40, height: 20))
+        routeLabel.text = "📍 Origin: \(flight.originCountry)"
         routeLabel.font = UIFont.systemFont(ofSize: 13)
         routeLabel.textColor = .secondaryLabel
         popup.addSubview(routeLabel)
         
+        // Calculate distance from user to flight
+        var yPos: CGFloat = 86
+        if let flightLat = flight.latitude, let flightLon = flight.longitude, let userLoc = currentLocation {
+            let distance = calculateDistance(
+                from: userLoc.coordinate,
+                to: CLLocationCoordinate2D(latitude: flightLat, longitude: flightLon)
+            )
+            let distanceLabel = UILabel(frame: CGRect(x: 20, y: yPos, width: popup.bounds.width - 40, height: 20))
+            let distanceText = distance < 1000 ? String(format: "%.0f m", distance) : String(format: "%.1f km", distance / 1000)
+            distanceLabel.text = "Distance: \(distanceText)"
+            distanceLabel.font = UIFont.systemFont(ofSize: 13)
+            distanceLabel.textColor = .secondaryLabel
+            popup.addSubview(distanceLabel)
+            yPos += 24
+        }
+        
+        // Add speed if available
+        if let velocity = flight.velocity {
+            let speedLabel = UILabel(frame: CGRect(x: 20, y: yPos, width: popup.bounds.width - 40, height: 20))
+            let speedText = String(format: "%.0f kts", velocity * 1.94384) // Convert m/s to knots
+            speedLabel.text = "Speed: \(speedText)"
+            speedLabel.font = UIFont.systemFont(ofSize: 13)
+            speedLabel.textColor = .secondaryLabel
+            popup.addSubview(speedLabel)
+            yPos += 24
+        }
+        
         // Add altitude
         let altitudeText = String(format: "%.0f ft", (flight.baroAltitude ?? 0) * 3.28084)
-        let altitudeLabel = UILabel(frame: CGRect(x: 20, y: 92, width: popup.bounds.width - 40, height: 20))
+        let altitudeLabel = UILabel(frame: CGRect(x: 20, y: yPos, width: popup.bounds.width - 40, height: 20))
         altitudeLabel.text = "Altitude: \(altitudeText)"
         altitudeLabel.font = UIFont.systemFont(ofSize: 13)
         altitudeLabel.textColor = .secondaryLabel
         popup.addSubview(altitudeLabel)
+        yPos += 24
         
-        // Add swipe indicator BELOW altitude row
-        if shuffledFlights.count > 1 {
-            let swipeIndicator = UILabel(frame: CGRect(x: 20, y: 116, width: popup.bounds.width - 40, height: 14))
-            swipeIndicator.text = "← Swipe to browse flights (\(currentShuffleIndex + 1)/\(shuffledFlights.count)) →"
-            swipeIndicator.font = UIFont.systemFont(ofSize: 11)
-            swipeIndicator.textColor = .tertiaryLabel
+        // Add swipe indicator BELOW all data rows - better spacing (show if multiple flights)
+        if currentFlights.count > 1 {
+            let swipeIndicator = UILabel(frame: CGRect(x: 20, y: yPos + 8, width: popup.bounds.width - 40, height: 16))
+            swipeIndicator.text = "← Swipe to browse flights (\(currentShuffleIndex + 1)/\(currentFlights.count)) →"
+            swipeIndicator.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+            swipeIndicator.textColor = .systemBlue
             swipeIndicator.textAlignment = .center
             popup.addSubview(swipeIndicator)
         }
@@ -471,6 +633,9 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5, options: .curveEaseOut) {
             popup.transform = .identity
             popup.alpha = 1
+        } completion: { _ in
+            // Add swipe gestures after animation completes
+            self.addSwipeGestures()
         }
     }
     
@@ -497,7 +662,12 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         innerRing.layer.borderColor = UIColor.cyan.withAlphaComponent(0.6).cgColor
         compass.addSubview(innerRing)
         
-        // Add NSEW labels that will rotate
+        // Create a container for NSEW labels that will rotate as a unit
+        let labelContainer = UIView(frame: compass.bounds)
+        labelContainer.backgroundColor = UIColor.clear
+        labelContainer.tag = 3000 // Tag for label container
+        
+        // Add NSEW labels to the container
         let directions = ["N", "E", "S", "W"]
         let angles: [CGFloat] = [0, 90, 180, 270]
         
@@ -516,29 +686,25 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
                 y: compassSize / 2 + radius * sin(angle)
             )
             
-            compass.addSubview(label)
+            labelContainer.addSubview(label)
         }
         
-        // Add fixed blue arrow pointing to flight
-        let arrowView = UIView(frame: CGRect(x: compassSize / 2 - 8, y: compassSize / 2 - 8, width: 16, height: 16))
-        arrowView.backgroundColor = .clear
+        compass.addSubview(labelContainer)
         
-        let arrowLayer = CAShapeLayer()
-        let arrowPath = UIBezierPath()
-        arrowPath.move(to: CGPoint(x: 8, y: 0))    // Top point
-        arrowPath.addLine(to: CGPoint(x: 0, y: 10)) // Left point
-        arrowPath.addLine(to: CGPoint(x: 3, y: 10))  // Left notch
-        arrowPath.addLine(to: CGPoint(x: 3, y: 16))  // Bottom
-        arrowPath.addLine(to: CGPoint(x: 13, y: 16)) // Bottom
-        arrowPath.addLine(to: CGPoint(x: 13, y: 10)) // Right notch
-        arrowPath.addLine(to: CGPoint(x: 16, y: 10)) // Right point
-        arrowPath.close()
+        // Add fixed center dot (red arrow equivalent, always points north)
+        let centerDot = UIView(frame: CGRect(x: 0, y: 0, width: 8, height: 8))
+        centerDot.backgroundColor = UIColor.white
+        centerDot.layer.cornerRadius = 4
+        centerDot.center = CGPoint(x: compassSize / 2, y: compassSize / 2)
+        compass.addSubview(centerDot)
         
-        arrowLayer.path = arrowPath.cgPath
-        arrowLayer.fillColor = UIColor.systemBlue.cgColor
-        arrowView.layer.addSublayer(arrowLayer)
-        
-        compass.addSubview(arrowView)
+        // Add blue dot that will swivel to show flight location
+        let blueDot = UIView(frame: CGRect(x: 0, y: 0, width: 8, height: 8))
+        blueDot.backgroundColor = UIColor.systemBlue
+        blueDot.layer.cornerRadius = 4
+        blueDot.tag = 4000 // Tag for blue dot
+        blueDot.center = CGPoint(x: compassSize / 2, y: compassSize / 2 - 18) // Position at top of compass
+        compass.addSubview(blueDot)
         compass.tag = 2000 // Tag for popup compass
         popup.addSubview(compass)
         popupCompass = compass
@@ -565,25 +731,15 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         let forward = SIMD3<Float>(cameraTransform.columns.2.x, 0, cameraTransform.columns.2.z)
         let deviceHeading = Double(atan2(forward.x, forward.z) * 180 / .pi)
         
-        // Relative bearing from device heading to flight
-        let relativeBearing = bearing - deviceHeading
-        
-        // Rotate NSEW labels to compensate for device heading (like main compass)
-        let labelContainer = compass.subviews.first { subview in
-            if let borderColor = subview.layer.borderColor {
-                return UIColor(cgColor: borderColor) == UIColor.cyan.withAlphaComponent(0.6)
-            }
-            return false
-        }
+        // Rotate the label container as a unit (NSEW swivel around like a plate)
+        let labelContainer = compass.subviews.first { $0.tag == 3000 }
         labelContainer?.transform = CGAffineTransform(rotationAngle: CGFloat(deviceHeading) * .pi / 180)
         
-        // Rotate blue arrow to point at flight
-        compass.subviews.forEach { subview in
-            if subview.frame.size == CGSize(width: 16, height: 16) {
-                let rotation = CGFloat(relativeBearing) * .pi / 180
-                subview.transform = CGAffineTransform(rotationAngle: rotation)
-            }
-        }
+        // Rotate blue dot to show flight location (absolute bearing)
+        // The dot is positioned at top of compass, then rotated by absolute bearing
+        let blueDot = compass.subviews.first { $0.tag == 4000 }
+        let rotation = CGFloat(bearing) * .pi / 180
+        blueDot?.transform = CGAffineTransform(rotationAngle: rotation)
     }
     
     @objc private func dismissFlightDetail() {
@@ -788,6 +944,19 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         let flightNode = getOrCreateFlightNode(for: flight.id)
         flightNode.position = SCNVector3(worldPosition.x, worldPosition.y, worldPosition.z)
         
+        // Update target ring color based on selection
+        if let ringNode = flightNode.childNode(withName: "targetRing", recursively: false) {
+            if flight.id == selectedFlightId {
+                // Selected flight - glowing cyan ring
+                ringNode.geometry?.firstMaterial?.diffuse.contents = UIColor.cyan.withAlphaComponent(0.5)
+                ringNode.geometry?.firstMaterial?.emission.contents = UIColor.cyan.withAlphaComponent(0.8)
+            } else {
+                // Unselected flight - glowing red ring
+                ringNode.geometry?.firstMaterial?.diffuse.contents = UIColor.systemRed.withAlphaComponent(0.4)
+                ringNode.geometry?.firstMaterial?.emission.contents = UIColor.red.withAlphaComponent(0.6)
+            }
+        }
+        
         // Add flight information
         addFlightInfoToNode(flightNode, flight: flight)
     }
@@ -985,7 +1154,7 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
     private func createFlightNode() -> SCNNode {
         let node = SCNNode()
         
-        // Create aircraft geometry - make it clearly visible!
+        // Create aircraft geometry - red plane silhouette
         let aircraftGeometry = SCNBox(width: 0.08, height: 0.03, length: 0.15, chamferRadius: 0.01)
         aircraftGeometry.firstMaterial?.diffuse.contents = UIColor.systemRed
         aircraftGeometry.firstMaterial?.emission.contents = UIColor.red
@@ -994,20 +1163,22 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         let geometryNode = SCNNode(geometry: aircraftGeometry)
         node.addChildNode(geometryNode)
         
-        // Add a large invisible sphere for easy tapping (much larger than the visible plane)
-        let tapGeometry = SCNSphere(radius: 0.3)
+        // Add a large invisible sphere for easy tapping
+        let tapGeometry = SCNSphere(radius: 0.5)
         tapGeometry.firstMaterial?.diffuse.contents = UIColor.clear
         let tapNode = SCNNode(geometry: tapGeometry)
         tapNode.name = "tapTarget"
         node.addChildNode(tapNode)
         
-        // Add a target ring around the plane - will billboard to face camera
-        let ringGeometry = SCNTorus(ringRadius: 0.12, pipeRadius: 0.005)
-        ringGeometry.firstMaterial?.diffuse.contents = UIColor.systemRed.withAlphaComponent(0.6)
+        // Add a glowing red ring around the plane - ALWAYS faces camera
+        let ringGeometry = SCNTorus(ringRadius: 0.15, pipeRadius: 0.008)
+        // Color will be set dynamically based on selection
+        ringGeometry.firstMaterial?.diffuse.contents = UIColor.systemRed.withAlphaComponent(0.4)
+        ringGeometry.firstMaterial?.emission.contents = UIColor.red.withAlphaComponent(0.6)
         ringGeometry.firstMaterial?.lightingModel = .constant
         
         let ringNode = SCNNode(geometry: ringGeometry)
-        ringNode.name = "targetRing" // Tag for billboard behavior
+        ringNode.name = "targetRing"
         
         // Add billboard constraint to always face the camera
         let billboardConstraint = SCNBillboardConstraint()
@@ -1023,41 +1194,14 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         // Remove old text if exists
         node.childNodes.filter { $0.geometry is SCNText }.forEach { $0.removeFromParentNode() }
         
-        // Calculate distance from user to plane
-        var distanceKm: Double = 0
-        if let userLoc = currentLocation, let planeLat = flight.latitude, let planeLon = flight.longitude {
-            let distance = userLoc.distance(from: CLLocation(latitude: planeLat, longitude: planeLon))
-            distanceKm = distance / 1000.0
-        }
+        // ONLY show flight code (callsign) - white, billboard style, always facing camera
+        let callsignText = flight.callsign.trimmingCharacters(in: .whitespaces)
         
-        // Build info string with optional data
-        var infoParts: [String] = [flight.callsign]
-        
-        // Add distance if available
-        if distanceKm > 0 {
-            if distanceKm < 1 {
-                infoParts.append(String(format: "%.1f km", distanceKm))
-            } else {
-                infoParts.append(String(format: "%.0f km", distanceKm))
-            }
-        }
-        
-        // Add speed if available
-        if let velocity = flight.velocity {
-            infoParts.append(String(format: "%.0f kts", velocity))
-        }
-        
-        // Add altitude if available
-        if let altitude = flight.baroAltitude {
-            infoParts.append(String(format: "%.0f ft", altitude * 3.28084))
-        }
-        
-        let infoString = infoParts.joined(separator: "\n")
-        
-        let textGeometry = SCNText(string: infoString, extrusionDepth: 0.01)
-        textGeometry.font = UIFont.boldSystemFont(ofSize: 8)
+        let textGeometry = SCNText(string: callsignText, extrusionDepth: 0.01)
+        textGeometry.font = UIFont.boldSystemFont(ofSize: 12)
         textGeometry.flatness = 0.1
         textGeometry.firstMaterial?.diffuse.contents = UIColor.white
+        textGeometry.firstMaterial?.emission.contents = UIColor.white
         textGeometry.firstMaterial?.lightingModel = .constant
         
         // Center the text horizontally
@@ -1067,9 +1211,9 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         textGeometry.containerFrame = CGRect(x: CGFloat(-dx), y: CGFloat(-dy), width: CGFloat(max.x - min.x), height: CGFloat(max.y - min.y))
         
         let textNode = SCNNode(geometry: textGeometry)
-        textNode.name = "flightInfo" // Tag for billboard behavior
-        textNode.position = SCNVector3(0, 0.3, 0)  // Above the aircraft
-        textNode.scale = SCNVector3(0.005, 0.005, 0.005)
+        textNode.name = "flightInfo"
+        textNode.position = SCNVector3(0, -0.15, 0)  // Below the aircraft
+        textNode.scale = SCNVector3(0.006, 0.006, 0.006)
         
         // Add billboard constraint - completely free rotation to always face camera
         let billboardConstraint = SCNBillboardConstraint()
