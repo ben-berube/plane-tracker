@@ -26,9 +26,47 @@ class LoadingViewController: UIViewController {
         return label
     }()
     
+    private let planeLabel: UILabel = {
+        let label = UILabel()
+        label.textAlignment = .center
+        label.font = UIFont.monospacedSystemFont(ofSize: 32, weight: .bold)
+        label.textColor = .systemBlue
+        label.numberOfLines = 4
+        return label
+    }()
+    
     private var hasReceivedData = false
     private var transitionTimer: Timer?
     private var timeoutTimer: Timer?
+    private var animationTimer: Timer?
+    
+    // ASCII art planes for rotation
+    private let planeShapes = [
+        """
+          ✈️
+        """,
+        """
+         /`
+        /  `-
+        `````
+        """,
+        """
+        ╱╲
+       ╱  ╲
+      ╱    ╲
+     ╱───┬──╲
+    """,
+        """
+          ___
+         /|  \\
+        (o   o)
+         \\___/
+        """,
+        """
+         ✈
+        ══╗
+        """
+    ]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,17 +99,42 @@ class LoadingViewController: UIViewController {
         detailLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(detailLabel)
         
+        // Add plane animation label
+        planeLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(planeLabel)
+        
         NSLayoutConstraint.activate([
             statusLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            statusLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -30),
+            statusLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -100),
             statusLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
             statusLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
             
             detailLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             detailLabel.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 20),
             detailLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            detailLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
+            detailLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            
+            planeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            planeLabel.topAnchor.constraint(equalTo: detailLabel.bottomAnchor, constant: 40),
+            planeLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            planeLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
         ])
+        
+        // Start plane animation
+        startPlaneAnimation()
+    }
+    
+    private func startPlaneAnimation() {
+        var currentIndex = 0
+        planeLabel.text = planeShapes[0]
+        
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            currentIndex = (currentIndex + 1) % self.planeShapes.count
+            UIView.transition(with: self.planeLabel, duration: 0.3, options: .transitionCrossDissolve, animations: {
+                self.planeLabel.text = self.planeShapes[currentIndex]
+            }, completion: nil)
+        }
     }
     
     private func setupBackendSubscriptions() {
@@ -158,6 +221,7 @@ class LoadingViewController: UIViewController {
     deinit {
         transitionTimer?.invalidate()
         timeoutTimer?.invalidate()
+        animationTimer?.invalidate()
     }
 }
 
