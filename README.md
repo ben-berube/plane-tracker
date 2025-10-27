@@ -1,178 +1,171 @@
 # PlaneTracker
 
-A real-time aircraft tracking system with augmented reality visualization, built with Python backend and iOS frontend.
+An iOS AR app that displays real-time aircraft in augmented reality using your iPhone's camera.
 
 ## Overview
 
-PlaneTracker combines real-time flight data with augmented reality to provide an immersive aircraft tracking experience. The system features advanced trajectory prediction, intelligent altitude estimation, and optimized caching for reliable performance.
+PlaneTracker overlays live flight data onto your camera view, showing planes as 3D objects in AR space with their flight paths, callsigns, and detailed information. Built with ARKit and CoreLocation, it fetches real-time data directly from the OpenSky Network API.
 
-## Quick Start
+### Key Features
 
-### For iOS Development
+- **Real-time AR Visualization**: See planes floating in 3D space with their actual flight paths
+- **Live Flight Data**: Direct integration with OpenSky Network API (refreshes every 8 seconds)
+- **Interactive Compass**: Radar-style compass shows plane bearings relative to your location
+- **Flight Details**: Tap any plane to see altitude, speed, distance, and flight info
+- **Browse Mode**: Swipe through all available flights with shuffle navigation
+- **Digital Zoom**: Pinch-to-zoom with visual slider (up to 5x magnification)
+- **Device Location**: Uses your actual GPS coordinates to position planes accurately
+
+## Tech Stack
+
+- **Swift** with **ARKit** for AR visualization
+- **SceneKit** for 3D rendering
+- **CoreLocation** for GPS tracking
+- **Combine** for reactive data flow
+- **OpenSky Network API** for flight data
+
+## Setup & Installation
+
+### Prerequisites
+
+- **macOS** with **Xcode 14.0+**
+- **iPhone** with **iOS 15.0+** (ARKit requires iOS 11+, tested on iOS 15+)
+- **Apple Developer Account** (for running on physical device)
+- **Active WiFi** or cellular connection
+
+### Quick Start
 
 1. **Clone the repository**
-2. **Open `PlaneTracker.xcodeproj` in Xcode**
-3. **Follow the [XCODE_SETUP_GUIDE.md](XCODE_SETUP_GUIDE.md) for detailed setup instructions**
+   ```bash
+   git clone <repo-url>
+   cd plane-tracker
+   ```
 
-### For Backend Development
+2. **Open in Xcode**
+   ```bash
+   open PlaneTracker.xcodeproj
+   ```
 
-1. **Navigate to `Backend/` directory**
-2. **Follow the [Backend/README.md](Backend/README.md) for Python server setup**
+3. **Configure signing**
+   - Select the project in Xcode
+   - Go to "Signing & Capabilities"
+   - Select your development team
+   - Xcode will automatically manage your provisioning profile
 
-## Architecture
+4. **Connect your iPhone**
+   - Connect via USB cable
+   - Trust the computer on your iPhone if prompted
+   - Select your device as the run destination in Xcode
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   iOS App       │    │   Python Backend │    │   OpenSky API   │
-│   (ARKit)       │◄───┤   (Data Processing)│◄───┤   (Flight Data) │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
+5. **Build and run**
+   - Press `Cmd + R` or click the Play button
+   - Grant location permissions when prompted
+   - Point your camera at the sky!
 
-### Key Components
+### Location Permissions
 
-- **iOS App**: ARKit-based augmented reality visualization
-- **Python Backend**: Flight data processing and API serving
-- **OpenSky API**: Real-time aircraft data source
-- **Kalman Filtering**: Advanced trajectory prediction
-- **Intelligent Caching**: Optimized data retrieval
+The app requires location access to:
+- Calculate distances to aircraft
+- Show compass bearings relative to your position
+- Position planes accurately in AR space
 
-## Features
+You'll be prompted to grant "Location While Using App" on first launch.
 
-- **Real-time Flight Tracking**: Live aircraft data with 8-second refresh
-- **Augmented Reality**: ARKit-based 3D aircraft visualization
-- **Trajectory Prediction**: Kalman filtering for flight path forecasting
-- **Altitude Estimation**: Multi-source altitude data with confidence scoring
-- **Performance Optimization**: Intelligent caching and rate limit handling
-- **Cross-platform**: iOS app with Python backend
+## How It Works
+
+1. **Data Fetching**: App queries OpenSky Network API for flights in the SF Bay Area
+2. **Coordinate Conversion**: Converts latitude/longitude/altitude to AR world coordinates
+3. **AR Rendering**: Creates 3D planes, trajectory lines, and compass overlay
+4. **Interaction**: Tap planes for details, swipe to browse, use pinch-to-zoom
+
+### Coordinate System
+
+- Uses a **1:1000 scale** (1km in real world = 1 meter in AR)
+- Planes positioned relative to your device's GPS location
+- Billboard constraints keep labels facing the camera
 
 ## Project Structure
 
 ```
 PlaneTracker/
-├── PlaneTracker.xcodeproj/     # Xcode project file
-├── PlaneTrackerApp/            # iOS application source
-│   ├── Models/                # Data models (Flight, Coordinates)
-│   ├── Services/              # Business logic (Backend, OpenSky)
-│   ├── Views/                 # UI controllers (ARView, Annotations)
-│   ├── Utils/                 # Utility functions (MathHelpers)
-│   └── Assets.xcassets/       # App icons and assets
-├── PlaneTrackerTests/          # iOS unit tests
-├── Backend/                   # Python backend server
-│   ├── main.py               # Main server application
-│   ├── flights.py            # Flight data processing
-│   ├── kalman_filter.py      # Kalman filtering algorithms
-│   └── requirements.txt      # Python dependencies
-├── XCODE_SETUP_GUIDE.md       # Comprehensive iOS setup guide
-└── README.md                  # This file
+├── PlaneTrackerApp/           # iOS application
+│   ├── Models/               # Flight.swift, Coordinates.swift
+│   ├── Services/             # OpenSkyService.swift, TrajectoryPredictor.swift
+│   ├── Views/                # ARView.swift, LoadingViewController.swift
+│   └── Utils/                # MathHelpers.swift
+├── PlaneTrackerAppTests/     # Unit tests
+└── PlaneTracker.xcodeproj    # Xcode project
 ```
 
-## Getting Started
+## Usage
 
-### Prerequisites
+### Viewing Planes
+- Point your camera at the sky
+- Red indicators mark planes in AR space
+- Tapped planes turn cyan
+- Text labels always face you for easy reading
 
-- **Xcode 14.0+** (for iOS development)
-- **Python 3.8+** (for backend server)
-- **iPhone with iOS 15.0+** (for ARKit support)
-- **Apple Developer Account** (for device testing)
+### Compass Overlay
+- Fixed red arrow points north
+- NSEW labels rotate with your device
+- Red dots show plane bearings
+- Tap "Shuffle Flight" to browse with a specialized compass
 
-### Setup Instructions
+### Flight Details
+- Tap any plane to open its detail card
+- Shows flight number, airline, origin, distance, speed, altitude
+- Swipe left/right to browse other flights
+- Flight codes are selectable for lookup
 
-1. **iOS Development**: See [XCODE_SETUP_GUIDE.md](XCODE_SETUP_GUIDE.md) for complete setup
-2. **Backend Development**: See [Backend/README.md](Backend/README.md) for Python server setup
-
-## API Endpoints
-
-The backend provides these REST endpoints:
-
-- `GET /api/health` - Health check
-- `GET /api/flights` - Get all flights
-- `GET /api/flights/{id}` - Get specific flight
-- `GET /api/flights/{id}/trajectory` - Get flight trajectory
-- `GET /api/flights/{id}/altitude` - Get altitude prediction
-
-## Testing
-
-### iOS Tests
-- **Unit Tests**: Press Cmd+U in Xcode
-- **Test Coverage**: Backend service, models, coordinates, trajectory, altitude
-- **Integration Tests**: End-to-end data flow validation
-
-### Backend Tests
-```bash
-cd Backend
-python test_enhanced_api.py
-python test_optimized_api.py
-```
-
-## Performance
-
-- **8-second cache duration** for optimal API usage
-- **Rate limit handling** for OpenSky API (10 requests/minute)
-- **Background processing** for continuous data updates
-- **Memory optimization** for ARKit rendering
-- **CORS support** for iOS app connectivity
-
-## Requirements
-
-### iOS App
-- **Xcode 14.0+**
-- **iOS 15.0+**
-- **iPhone 6s or later** (for ARKit)
-- **Active Apple Developer Account**
-
-### Backend
-- **Python 3.8+**
-- **aiohttp** (async HTTP server)
-- **numpy** (numerical computing)
-- **python-dateutil** (date utilities)
-
-## Development
-
-### iOS Development
-1. **Open `PlaneTracker.xcodeproj` in Xcode**
-2. **Select your development team** in project settings
-3. **Connect iPhone** and select as deployment target
-4. **Build and run** (Cmd+R)
-
-### Backend Development
-1. **Navigate to `Backend/` directory**
-2. **Create virtual environment**: `python3 -m venv venv`
-3. **Activate environment**: `source venv/bin/activate`
-4. **Install dependencies**: `pip install -r requirements.txt`
-5. **Start server**: `python main.py`
+### Zoom Controls
+- Pinch in/out or use the slider
+- Distant planes maintain minimum size for visibility
+- Up to 5x magnification
 
 ## Troubleshooting
 
-### Common Issues
-- **Backend connection**: Ensure iPhone and Mac on same WiFi network
-- **ARKit not working**: Verify device compatibility and permissions
-- **Code signing errors**: Update bundle identifier and select correct team
-- **Rate limit warnings**: Expected behavior from OpenSky API
+### No Planes Showing
+- Check internet connection (app fetches live data)
+- Ensure location permissions are granted
+- Try pointing camera at different angles
+- Wait 8 seconds for data refresh
 
-### Getting Help
-1. **Check setup guides** for detailed troubleshooting
-2. **Review Xcode console** for error messages
-3. **Test backend independently** with curl commands
-4. **Verify device compatibility** for ARKit support
+### AR Not Working
+- Requires iPhone 6s or later
+- Needs iOS 15.0+
+- Ensure camera isn't covered
+- Try relaunching the app
 
-## Contributing
+### Location Issues
+- Grant "Location While Using App" permission
+- Ensure GPS is enabled in Settings
+- May not work indoors (GPS requires line-of-sight to satellites)
 
-1. **Fork the repository**
-2. **Create feature branch**: `git checkout -b feature/new-feature`
-3. **Make changes and test thoroughly**
-4. **Run tests**: iOS (Cmd+U) and Backend (`python -m pytest`)
-5. **Submit pull request** with description
+## Development
+
+### Building Tests
+```bash
+# Run unit tests in Xcode
+Cmd + U
+```
+
+### Data Refresh Rate
+- OpenSky API cached for 8 seconds
+- Rate limited to avoid API throttling
+- Real-time updates for moving aircraft
+
+### API Integration
+Direct HTTPS calls to:
+```
+https://opensky-network.org/api/states/all
+```
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License
 
-## Support
+## Credits
 
-For issues and questions:
-1. **Check the setup guides** first
-2. **Review error logs** for specific issues
-3. **Test components independently** to isolate problems
-4. **Verify network connectivity** between devices
-
-The project is designed to be robust and self-healing, with comprehensive error handling and graceful degradation when external services are unavailable.
+- **OpenSky Network** for flight data: https://opensky-network.org
+- Built with **ARKit** and **SceneKit**
+- Real-time aircraft tracking powered by crowd-sourced ADS-B data
