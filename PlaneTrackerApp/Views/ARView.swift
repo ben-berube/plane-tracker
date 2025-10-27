@@ -5,7 +5,7 @@ import simd
 import Combine
 import CoreLocation
 
-class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
+class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate, UIGestureRecognizerDelegate {
     
     var sceneView: ARSCNView!
     
@@ -429,11 +429,15 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         // Add swipe left to go to next flight
         let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(swipeToNextFlight))
         swipeLeft.direction = .left
+        swipeLeft.numberOfTouchesRequired = 1
+        swipeLeft.delegate = self
         popup.addGestureRecognizer(swipeLeft)
         
         // Add swipe right to go to previous flight
         let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(swipeToPreviousFlight))
         swipeRight.direction = .right
+        swipeRight.numberOfTouchesRequired = 1
+        swipeRight.delegate = self
         popup.addGestureRecognizer(swipeRight)
     }
     
@@ -614,12 +618,15 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
             popup.addSubview(swipeIndicator)
         }
         
-        // Add close button
+        // Add close button - ensure it's on top and interactive
         let closeButton = UIButton(frame: CGRect(x: popup.bounds.width - 44, y: 12, width: 32, height: 32))
         closeButton.setTitle("✕", for: .normal)
         closeButton.setTitleColor(.secondaryLabel, for: .normal)
         closeButton.titleLabel?.font = UIFont.systemFont(ofSize: 18)
+        closeButton.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.8)
+        closeButton.layer.cornerRadius = 16
         closeButton.addTarget(self, action: #selector(dismissFlightDetail), for: .touchUpInside)
+        closeButton.tag = 9999 // Special tag to identify close button
         popup.addSubview(closeButton)
         
         flightDetailView = popup
@@ -766,6 +773,16 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
             self.shuffledFlights = []
             self.currentShuffleIndex = 0
         }
+    }
+    
+    // MARK: - UIGestureRecognizerDelegate
+    
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        // Allow gestures only if touch is not on a button
+        if let button = touch.view as? UIButton {
+            return false
+        }
+        return true
     }
     
     private func updateCompass(for flights: [Flight]) {
@@ -930,9 +947,6 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
             updateTrajectoryVisualization(for: flight.id, trajectory: flightTrajectories[flight.id] ?? [])
         }
         print("📍 ARView: Total flight nodes in scene: \(flightNodes.count)")
-        
-        // Add Cursor logo at Cursor office location
-        addCursorLogo()
     }
     
     private func updateFlightPosition(_ flight: Flight) {
@@ -1258,117 +1272,4 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         node.addChildNode(arrowNode)
     }
     
-    // MARK: - Cursor Logo
-    
-    private var cursorLogoNode: SCNNode?
-    
-    private func addCursorLogo() {
-        // Only add once
-        if cursorLogoNode != nil { return }
-        
-        // Cursor office coordinates: 37.8078° N, 122.4159° W
-        let cursorLat = 37.8078
-        let cursorLon = -122.4159
-        
-        // Convert to AR world coordinates (at ground level initially)
-        let cursorPositionSIMD = convertToARWorldCoordinates(
-            latitude: cursorLat,
-            longitude: cursorLon,
-            altitude: 0.0
-        )
-        
-        // Convert SIMD3<Float> to SCNVector3
-        let cursorPosition = SCNVector3(cursorPositionSIMD.x, cursorPositionSIMD.y, cursorPositionSIMD.z)
-        
-        print("🏢 Cursor logo at lat=\(cursorLat), lon=\(cursorLon) → AR pos=(\(cursorPosition.x), \(cursorPosition.y), \(cursorPosition.z))")
-        
-        // Create main container node
-        let containerNode = SCNNode()
-        containerNode.position = cursorPosition
-        containerNode.name = "cursorLogo"
-        
-        // Create beam of light - tall cylindrical beam pointing upward
-        let beamHeight: Float = 10.0 // 10 meters high
-        let beamRadius: Float = 0.05 // Narrow beam
-        
-        let beamGeometry = SCNCylinder(radius: CGFloat(beamRadius), height: CGFloat(beamHeight))
-        beamGeometry.firstMaterial?.diffuse.contents = UIColor.cyan.withAlphaComponent(0.3)
-        beamGeometry.firstMaterial?.emission.contents = UIColor.cyan.withAlphaComponent(0.5)
-        beamGeometry.firstMaterial?.lightingModel = .constant
-        
-        let beamNode = SCNNode(geometry: beamGeometry)
-        beamNode.position = SCNVector3(0, beamHeight / 2, 0) // Center at half height
-        beamNode.name = "cursorBeam"
-        containerNode.addChildNode(beamNode)
-        
-        // Create Cursor logo - 3D geometric shape inspired by the multi-faceted design
-        // Using geometric planes to create a complex shape
-        let logoNode = createCursorLogoNode()
-        logoNode.position = SCNVector3(0, beamHeight, 0) // Atop the beam
-        logoNode.name = "cursorLogoGeometric"
-        containerNode.addChildNode(logoNode)
-        
-        // Add to scene
-        sceneView.scene.rootNode.addChildNode(containerNode)
-        cursorLogoNode = containerNode
-        
-        print("✅ Cursor logo added to AR scene")
-    }
-    
-    private func createCursorLogoNode() -> SCNNode {
-        let containerNode = SCNNode()
-        
-        // Create a multi-faceted 3D shape inspired by the Cursor logo
-        // Using multiple geometric planes to create a faceted diamond-like structure
-        
-        // Central white plane (front-facing)
-        let frontPlane = SCNBox(width: 0.4, height: 0.4, length: 0.05, chamferRadius: 0.01)
-        frontPlane.firstMaterial?.diffuse.contents = UIColor.white
-        frontPlane.firstMaterial?.emission.contents = UIColor.white.withAlphaComponent(0.3)
-        frontPlane.firstMaterial?.lightingModel = .constant
-        
-        let frontNode = SCNNode(geometry: frontPlane)
-        frontNode.position = SCNVector3(0, 0, 0.1)
-        containerNode.addChildNode(frontNode)
-        
-        // Right side plane (darker gray)
-        let rightPlane = SCNBox(width: 0.05, height: 0.4, length: 0.4, chamferRadius: 0.01)
-        rightPlane.firstMaterial?.diffuse.contents = UIColor.darkGray
-        rightPlane.firstMaterial?.emission.contents = UIColor.darkGray.withAlphaComponent(0.2)
-        rightPlane.firstMaterial?.lightingModel = .constant
-        
-        let rightNode = SCNNode(geometry: rightPlane)
-        rightNode.position = SCNVector3(0.2, 0, 0)
-        rightNode.rotation = SCNVector4(0, 1, 0, Float.pi / 2)
-        containerNode.addChildNode(rightNode)
-        
-        // Left side plane (darker gray)
-        let leftPlane = SCNBox(width: 0.05, height: 0.4, length: 0.4, chamferRadius: 0.01)
-        leftPlane.firstMaterial?.diffuse.contents = UIColor.darkGray
-        leftPlane.firstMaterial?.emission.contents = UIColor.darkGray.withAlphaComponent(0.2)
-        leftPlane.firstMaterial?.lightingModel = .constant
-        
-        let leftNode = SCNNode(geometry: leftPlane)
-        leftNode.position = SCNVector3(-0.2, 0, 0)
-        leftNode.rotation = SCNVector4(0, 1, 0, -Float.pi / 2)
-        containerNode.addChildNode(leftNode)
-        
-        // Top plane (light gray)
-        let topPlane = SCNBox(width: 0.4, height: 0.05, length: 0.4, chamferRadius: 0.01)
-        topPlane.firstMaterial?.diffuse.contents = UIColor.lightGray
-        topPlane.firstMaterial?.emission.contents = UIColor.lightGray.withAlphaComponent(0.2)
-        topPlane.firstMaterial?.lightingModel = .constant
-        
-        let topNode = SCNNode(geometry: topPlane)
-        topNode.position = SCNVector3(0, 0.2, 0)
-        topNode.rotation = SCNVector4(1, 0, 0, Float.pi / 2)
-        containerNode.addChildNode(topNode)
-        
-        // Add billboard constraint to always face camera
-        let billboardConstraint = SCNBillboardConstraint()
-        billboardConstraint.freeAxes = [.X, .Y, .Z]
-        containerNode.constraints = [billboardConstraint]
-        
-        return containerNode
-    }
 }
