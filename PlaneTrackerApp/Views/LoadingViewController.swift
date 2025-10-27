@@ -29,44 +29,14 @@ class LoadingViewController: UIViewController {
     private let planeLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
-        label.font = UIFont.monospacedSystemFont(ofSize: 32, weight: .bold)
-        label.textColor = .systemBlue
-        label.numberOfLines = 4
+        label.font = UIFont.systemFont(ofSize: 60, weight: .regular)
+        label.text = "✈️"
         return label
     }()
     
     private var hasReceivedData = false
     private var transitionTimer: Timer?
     private var timeoutTimer: Timer?
-    private var animationTimer: Timer?
-    
-    // ASCII art planes for rotation
-    private let planeShapes = [
-        """
-          ✈️
-        """,
-        """
-         /`
-        /  `-
-        `````
-        """,
-        """
-        ╱╲
-       ╱  ╲
-      ╱    ╲
-     ╱───┬──╲
-    """,
-        """
-          ___
-         /|  \\
-        (o   o)
-         \\___/
-        """,
-        """
-         ✈
-        ══╗
-        """
-    ]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -125,16 +95,10 @@ class LoadingViewController: UIViewController {
     }
     
     private func startPlaneAnimation() {
-        var currentIndex = 0
-        planeLabel.text = planeShapes[0]
-        
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            currentIndex = (currentIndex + 1) % self.planeShapes.count
-            UIView.transition(with: self.planeLabel, duration: 0.3, options: .transitionCrossDissolve, animations: {
-                self.planeLabel.text = self.planeShapes[currentIndex]
-            }, completion: nil)
-        }
+        // Rotate the plane emoji continuously
+        UIView.animate(withDuration: 1.0, delay: 0, options: [.repeat, .curveLinear], animations: {
+            self.planeLabel.transform = CGAffineTransform(rotationAngle: .pi * 2)
+        }, completion: nil)
     }
     
     private func setupBackendSubscriptions() {
@@ -221,7 +185,7 @@ class LoadingViewController: UIViewController {
     deinit {
         transitionTimer?.invalidate()
         timeoutTimer?.invalidate()
-        animationTimer?.invalidate()
+        // No need to invalidate animationTimer since we're using UIView.animate with .repeat
     }
 }
 

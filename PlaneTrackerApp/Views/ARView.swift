@@ -749,6 +749,13 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
     @objc private func dismissFlightDetail() {
         guard let popup = flightDetailView else { return }
         
+        // Clear selected flight
+        selectedFlightId = nil
+        updateARVisualization() // Update AR target colors back to red
+        
+        // Remove swipe gestures to prevent interference
+        popup.gestureRecognizers?.forEach { popup.removeGestureRecognizer($0) }
+        
         UIView.animate(withDuration: 0.2, animations: {
             popup.transform = CGAffineTransform(translationX: 0, y: 200)
             popup.alpha = 0
