@@ -1264,11 +1264,14 @@ class ARView: UIViewController, ARSCNViewDelegate, CLLocationManagerDelegate {
         let cursorLon = -122.4159
         
         // Convert to AR world coordinates (at ground level initially)
-        let cursorPosition = convertToARWorldCoordinates(
+        let cursorPositionSIMD = convertToARWorldCoordinates(
             latitude: cursorLat,
             longitude: cursorLon,
             altitude: 0.0
         )
+        
+        // Convert SIMD3<Float> to SCNVector3
+        let cursorPosition = SCNVector3(cursorPositionSIMD.x, cursorPositionSIMD.y, cursorPositionSIMD.z)
         
         print("🏢 Cursor logo at lat=\(cursorLat), lon=\(cursorLon) → AR pos=(\(cursorPosition.x), \(cursorPosition.y), \(cursorPosition.z))")
         
